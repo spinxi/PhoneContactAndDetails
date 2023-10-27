@@ -1,14 +1,17 @@
-package com.example.phonecontactanddetails
 
+package com.example.phonecontactanddetails
+import android.Manifest
+import android.R.id
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.Manifest
+
 
 class MainActivity : AppCompatActivity() {
     private var layoutManager: RecyclerView.LayoutManager? = null;
@@ -42,41 +45,45 @@ class MainActivity : AppCompatActivity() {
 
     }
     private fun loadContacts() {
-        // Query phone contacts and populate the data in your adapter
+
         val contacts = readContacts()
         adapter = MyAdapter(contacts)
         recyclerView.adapter = adapter
     }
 
     private fun readContacts(): List<ContactList> {
-        val contactsList = ArrayList<ContactList>()
+        val contactsList = mutableListOf<ContactList>()
 
-        val cursor = contentResolver.query(
-            ContactsContract.Contacts.CONTENT_URI,
-            null,
+        // Define the columns you want to retrieve for the CommonDataKinds.Phone table
+        val projection = arrayOf(
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
+            ContactsContract.CommonDataKinds.Phone.NUMBER
+        )
+
+        contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,  // Use the correct URI
+            projection,
             null,
             null,
             null
-        )
+        )?.use { cursor ->
+            val nameColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+            val phoneColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            val photoUriColumn = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
 
-        if (cursor != null && cursor.moveToFirst()) {
-            val idColumn = cursor.getColumnIndex(ContactsContract.Contacts._ID)
-            val nameColumn = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
-            val photoUriColumn = cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
-
-            do {
-                val contactID = cursor.getString(idColumn)
+            while (cursor.moveToNext()) {
                 val name = cursor.getString(nameColumn)
-                val photoUri = if (photoUriColumn != -1) cursor.getString(photoUriColumn) else null
+                val phone = cursor.getString(phoneColumn)
+                val photoUri = cursor.getString(photoUriColumn)
 
-                // Create a ContactList object and add it to the list
-                val contact = ContactList(name, photoUri)
+                val contact = ContactList(name, photoUri, phone)
                 contactsList.add(contact)
-            } while (cursor.moveToNext())
+            }
         }
-
-        cursor?.close() // Close the cursor to avoid resource leaks
 
         return contactsList
     }
+
+
 }

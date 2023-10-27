@@ -59,7 +59,6 @@ class MainActivity : AppCompatActivity() {
             null
         )
 
-
         if (cursor != null && cursor.moveToFirst()) {
             val idColumn = cursor.getColumnIndex(ContactsContract.Contacts._ID)
             val nameColumn = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
@@ -69,9 +68,14 @@ class MainActivity : AppCompatActivity() {
                 val contactID = cursor.getString(idColumn)
                 val name = cursor.getString(nameColumn)
                 val photoUri = if (photoUriColumn != -1) cursor.getString(photoUriColumn) else null
-                // Process contact data here
+
+                // Create a ContactList object and add it to the list
+                val contact = ContactList(name, photoUri)
+                contactsList.add(contact)
             } while (cursor.moveToNext())
         }
+
+        cursor?.close() // Close the cursor to avoid resource leaks
 
         return contactsList
     }
